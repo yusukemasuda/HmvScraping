@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Collections.ObjectModel;
     using System.Net;
     using System.Text.RegularExpressions;
     using System.Web;
@@ -18,12 +19,14 @@
             this.HttpUtils = httpUtils;
         }
 
-        public IEnumerable<StoreStock> GetStoreStocks(StockKeepingUnit sku)
+        public Stock GetStock(Product product)
         {
-            var url = string.Format("https://www.hmv.co.jp/productitemstock/stock/{0}", HttpUtility.UrlEncode(sku.Id));
+            var url = string.Format("https://www.hmv.co.jp/productitemstock/stock/{0}", HttpUtility.UrlEncode(product.Sku.Id));
             var doc = HttpUtils.GetDocument(new Uri(url));
 
             var table = doc.GetElementById("chiku-99");
+
+            var storeStocks = new Collection<StoreStock>();
             foreach (var row in table.QuerySelectorAll("tr"))
             {
                 var cells = row.GetElementsByTagName("td");
@@ -33,13 +36,19 @@
                     continue;
                 }
                 var stockIcon = cells[0].QuerySelector("img");
-                yield return new StoreStock()
+                var actionButton = cells[2].QuerySelector("button");
+                storeStocks.Add(new StoreStock()
                 {
-                    Sku = sku,
                     Store = GetStore((IHtmlAnchorElement)storeLink),
-                    StockLeft = GetStockLeft((IHtmlImageElement)stockIcon)
-                };
+                    StockLeft = GetStockLeft((IHtmlImageElement)stockIcon),
+                    Action = GetAction((IHtmlButtonElement)actionButton)
+                });
             }
+            return new Stock
+            {
+                Product = product,
+                StoreStocks = storeStocks
+            };
         }
 
         private Store GetStore(IHtmlAnchorElement element)
@@ -60,14 +69,28 @@
 
         private readonly IDictionary<string, StockLeft> StockLeftMap = new Dictionary<string, StockLeft>
         {
-            { "×", StockLeft.NonStock },
-            { "△", StockLeft.LowStock },
-            { "○", StockLeft.InStock }
+            { StockLeft.NonStock.Mark, StockLeft.NonStock },
+            { StockLeft.LowStock.Mark, StockLeft.LowStock },
+            { StockLeft.InStock.Mark, StockLeft.InStock }
         };
 
-        private StockLeft? GetStockLeft(IHtmlImageElement element)
+        private StockLeft GetStockLeft(IHtmlImageElement element)
         {
-            return StockLeftMap[element.AlternativeText];
+            var mark = element.AlternativeText;
+            if (!StockLeftMap.ContainsKey(mark))
+            {
+                return StockLeft.Unknown;
+            }
+            return StockLeftMap[mark];
+        }
+
+        private string GetAction(IHtmlButtonElement element)
+        {
+            if (element == null)
+            {
+                return null;
+            }
+            return element.InnerHtml.Trim();
         }
     }
 }

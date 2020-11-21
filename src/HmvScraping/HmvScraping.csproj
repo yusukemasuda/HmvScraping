@@ -4,11 +4,8 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <Authors>Yusuke Masuda</Authors>
     <Copyright>Copyright (c) 2020 Yusuke Masuda All rights reserved.</Copyright>
+    <Version>1.0.1</Version>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="Artist.cs~RF39fe9e.TMP" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="AngleSharp" Version="0.14.0" />

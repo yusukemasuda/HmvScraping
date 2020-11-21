@@ -34,23 +34,10 @@
                 var productUri = new ProductUri(GetProductPageLink((IHtmlListItemElement)resultItem));
                 var result = new SearchResult
                 {
-                    ProductUri = productUri,
-                    Artist = new Artist(productUri.ArtistId, GetArtist((IHtmlListItemElement)resultItem)),
-                    Sku = new StockKeepingUnit(productUri.Sku, GetTitle((IHtmlListItemElement)resultItem))
+                    ProductUri = productUri
                 };
                 yield return result;
             }
-        }
-
-        private string GetTitle(IHtmlListItemElement element)
-        {
-            var a = GetTitleAnchorElement(element);
-            var title = default(string);
-            if (a.InnerHtml != null)
-            {
-                title = WebUtility.HtmlDecode(a.InnerHtml);
-            }
-            return title?.Trim();
         }
 
         private string GetProductPageLink(IHtmlListItemElement element)
@@ -59,27 +46,10 @@
             return a.Href;
         }
 
-        private string GetArtist(IHtmlListItemElement element)
-        {
-            var a = GetArtistAnchorElement(element);
-            var artist = default(string);
-            if (a.InnerHtml != null)
-            {
-                artist = WebUtility.HtmlDecode(a.InnerHtml);
-            }
-            return artist?.Trim();
-        }
-
         private IHtmlAnchorElement GetTitleAnchorElement(IHtmlListItemElement element)
         {
             var h3 = element?.QuerySelector("h3.title");
             var a = (IHtmlAnchorElement)h3?.GetElementsByTagName("a").FirstOrDefault();
-            return a;
-        }
-        private IHtmlAnchorElement GetArtistAnchorElement(IHtmlListItemElement element)
-        {
-            var p = element?.QuerySelector("p.name");
-            var a = (IHtmlAnchorElement)p?.GetElementsByTagName("a").FirstOrDefault();
             return a;
         }
     }

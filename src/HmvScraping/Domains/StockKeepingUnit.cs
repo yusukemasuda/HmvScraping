@@ -11,5 +11,11 @@
             this.Id = id;
             this.Title = title;
         }
+
+        public override string ToString()
+        {
+            return $"{{ {Id}, {Title} }}";
+        }
+
     }
 }

@@ -28,7 +28,8 @@
                 Artist = new Artist(uri.ArtistId, GetArtist((IHtmlDocument)doc)),
                 Sku = new StockKeepingUnit(uri.Sku, GetTitle((IHtmlDocument)doc)),
                 IsInStock = stockStatusLabel.Contains("在庫あり"),
-                IsInPreOrder = stockStatusLabel.Contains("発売予定")
+                IsInPreOrder = stockStatusLabel.Contains("発売予定"),
+                PageLink = uri.ToUri()
             };
             return product;
         }

@@ -5,6 +5,7 @@
     using System.Collections.ObjectModel;
     using System.IO;
     using System.Linq;
+    using System.Text;
     using HmvScraping;
     using HmvScraping.Domains;
     using HmvScraping.Services;
@@ -25,6 +26,8 @@
             this.ProductService = product;
             this.StockService = stock;
             this.UserNotification = notification;
+
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
         }
 
         public void Run(Options options)
@@ -85,12 +88,12 @@
                     PutNoneFile(keyword, outputDirectory);
                     continue;
                 }
-                var stocks = StockService.GetStoreStocks(first.Sku);
-                PutResultFile(keyword, stocks, outputDirectory);
+                var stock = StockService.GetStock(product);
+                PutResultFile(keyword, stock, outputDirectory);
             }
         }
 
-        private void PutResultFile(string keyword, IEnumerable<StoreStock> storeStocks, DirectoryInfo directory)
+        private void PutResultFile(string keyword, Stock stock, DirectoryInfo directory)
         {
             if (!directory.Exists)
             {
@@ -103,11 +106,28 @@
             {
                 output.Delete();
             }
-            using (var writer = new StreamWriter(output.FullName))
+            using (var writer = new StreamWriter(
+                new FileStream(output.FullName, FileMode.OpenOrCreate), Encoding.GetEncoding("Shift_JIS")))
             {
-                foreach (var storeStock in storeStocks)
+                WriteCsvElement(writer, "在庫");
+                WriteCsvSeparator(writer);
+                WriteCsvElement(writer, "店舗");
+                WriteCsvSeparator(writer);
+                WriteCsvElement(writer, "アクション");
+                WriteCsvSeparator(writer);
+                WriteCsvElement(writer, "商品ページ");
+                writer.WriteLine();
+
+                foreach (var storeStock in stock.StoreStocks)
                 {
-                    writer.WriteLine(storeStock.Store.Name);
+                    WriteCsvElement(writer, storeStock.StockLeft.Mark);
+                    WriteCsvSeparator(writer);
+                    WriteCsvElement(writer, storeStock.Store.Name);
+                    WriteCsvSeparator(writer);
+                    WriteCsvElement(writer, storeStock.Action ?? string.Empty);
+                    WriteCsvSeparator(writer);
+                    WriteCsvElement(writer, stock.Product.PageLink?.ToString() ?? string.Empty);
+                    writer.WriteLine();
                 }
             }
             UserNotification.Put($"Output: { output.FullName }");
@@ -122,6 +142,18 @@
             var output = new FileInfo(Path.Combine(directory.FullName, $"{ keyword }_なし.csv"));
             output.Create();
             UserNotification.Put($"Output: { output.FullName }");
+        }
+
+        private void WriteCsvElement(StreamWriter writer, string value)
+        {
+            writer.Write("\"");
+            writer.Write(value);
+            writer.Write("\"");
+        }
+
+        private void WriteCsvSeparator(StreamWriter writer)
+        {
+            writer.Write(",");
         }
     }
 }
